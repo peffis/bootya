@@ -1,0 +1,86 @@
+#!/bin/sh
+
+PROJECT=$1
+
+wget https://raw.githubusercontent.com/ninenines/erlang.mk/master/erlang.mk
+
+make PROJECT=$1 -f erlang.mk bootstrap
+make PROJECT=$1 -f erlang.mk bootstrap-rel
+
+cat > Makefile <<EOF
+
+#AUTOPATCH += yaws
+DEPS = yaws lager jiffy
+dep_yaws = git https://github.com/klacke/yaws master
+dep_lager = git https://github.com/basho/lager master
+dep_jiffy = git https://github.com/davisp/jiffy master
+
+include erlang.mk
+EOF
+
+
+cat > "src/${PROJECT}_app.erl" <<EOF
+-module(${PROJECT}_app).
+
+-behaviour(application).
+
+%% Application callbacks
+-export([start/2, stop/1]).
+
+%% ===================================================================
+%% Application callbacks
+%% ===================================================================
+
+start(_StartType, _StartArgs) ->
+    Ret = ${PROJECT}_sup:start_link(),
+    
+    %% start yaws in embedded mode under supervisor orch_sup 
+    Id = "${PROJECT}_server",
+
+    GconfList = [{logdir, "/tmp"},
+		 {id, Id}],
+
+    Docroot = "/var/www/$PROJECT",
+
+    SconfList = [{docroot, Docroot},
+		 {port, 8080},    %% running on port 8080
+		 {listen, {0, 0, 0, 0}},
+		 {mime_types_info, [{default_type, "text/html"}]},
+		 {appmods, [{"/$PROJECT", orch_appmod}]}],
+
+    {ok, SCList, GC, ChildSpecs} =
+	yaws_api:embedded_start_conf(Docroot, SconfList, GconfList, Id),
+    
+    %% assume our supervisor is registered as $PROJECT_sup
+    [supervisor:start_child(${PROJECT}_sup, Ch) || Ch <- ChildSpecs],
+
+    %% now configure Yaws
+    yaws_api:setconf(GC, SCList),
+
+    Ret.
+
+
+
+stop(_State) ->
+    ok.
+
+EOF
+
+cat > "src/${PROJECT}.app.src" <<EOF
+{application, ${PROJECT},
+ [
+  {description, ""},
+  {vsn, "0.9"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+		  crypto,
+		  lager
+                 ]},
+  {mod, { ${PROJECT}_app, []}},
+  {included_applications, [yaws, jiffy]},
+  {modules, []},
+  {env, []}
+ ]}.
+EOF
