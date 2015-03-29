@@ -46,7 +46,7 @@ start(_StartType, _StartArgs) ->
 		 {port, 8080},    %% running on port 8080
 		 {listen, {0, 0, 0, 0}},
 		 {mime_types_info, [{default_type, "text/html"}]},
-		 {appmods, [{"/$PROJECT", orch_appmod}]}],
+		 {appmods, [{"/$PROJECT", ${PROJECT}_appmod}]}],
 
     {ok, SCList, GC, ChildSpecs} =
 	yaws_api:embedded_start_conf(Docroot, SconfList, GconfList, Id),
