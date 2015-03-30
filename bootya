@@ -45,7 +45,7 @@ start(_StartType, _StartArgs) ->
     GconfList = [{logdir, "/tmp"},
 		 {id, Id}],
 
-    Docroot = "${CURDIR}/src/www",
+    {ok, Docroot} = application:get_env(${PROJECT}, doc_root),
 
     SconfList = [{docroot, Docroot},
 		 {port, 8080},    %% running on port 8080
@@ -108,4 +108,10 @@ out(A) ->
 
 out(_, 'GET', ["${PROJECT}", "hello"]) ->
     {ehtml, [{pre, [], "hello"}]}.
+EOF
+
+cat > "rel/sys.config" <<EOF
+[
+    {${PROJECT}, [ {doc_root, "${CURDIR}/src/www"} ]}
+].
 EOF
