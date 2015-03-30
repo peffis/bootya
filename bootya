@@ -1,11 +1,12 @@
 #!/bin/sh
 
-PROJECT=$1
+CURDIR=`pwd`
+PROJECT=`basename $CURDIR`
 
 wget https://raw.githubusercontent.com/ninenines/erlang.mk/master/erlang.mk
 
-make PROJECT=$1 -f erlang.mk bootstrap
-make PROJECT=$1 -f erlang.mk bootstrap-rel
+make -f erlang.mk bootstrap
+make -f erlang.mk bootstrap-rel
 
 cat > Makefile <<EOF
 
@@ -83,4 +84,24 @@ cat > "src/${PROJECT}.app.src" <<EOF
   {modules, []},
   {env, []}
  ]}.
+EOF
+
+
+cat > "src/${PROJECT}_appmod.erl" <<EOF
+-module(${PROJECT}_appmod).
+-export([out/1]).
+-compile([{parse_transform, lager_transform}]).
+
+-include("deps/yaws/include/yaws_api.hrl").
+
+
+
+out(A) ->
+    Uri = yaws_api:request_url(A),
+    Path = string:tokens(Uri#url.path,"/"),
+    Method = (A#arg.req)#http_request.method,
+    out(A, Method, Path).
+
+out(_, 'GET', ["${PROJECT}", "hello"]) ->
+    {ehtml, [{pre, [], "hello"}]}.
 EOF
