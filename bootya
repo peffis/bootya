@@ -19,6 +19,10 @@ dep_jiffy = git https://github.com/davisp/jiffy master
 include erlang.mk
 EOF
 
+mkdir src/www
+cat > src/www/index.html <<EOF
+It worked!
+EOF
 
 cat > "src/${PROJECT}_app.erl" <<EOF
 -module(${PROJECT}_app).
@@ -41,7 +45,7 @@ start(_StartType, _StartArgs) ->
     GconfList = [{logdir, "/tmp"},
 		 {id, Id}],
 
-    Docroot = "/var/www/$PROJECT",
+    Docroot = "${CURDIR}/src/www",
 
     SconfList = [{docroot, Docroot},
 		 {port, 8080},    %% running on port 8080
