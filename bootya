@@ -9,8 +9,7 @@ make -f erlang.mk bootstrap
 make -f erlang.mk bootstrap-rel
 
 cat > Makefile <<EOF
-
-#AUTOPATCH += yaws
+NO_AUTOPATCH += yaws
 DEPS = yaws lager jiffy
 dep_yaws = git https://github.com/klacke/yaws master
 dep_lager = git https://github.com/basho/lager master
